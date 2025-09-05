@@ -44,12 +44,12 @@ BEGIN
 		SELECT
 			cst_id,
 			cst_key,
-			TRIM(cst_firstname) AS cst_firstname,
+			TRIM(cst_firstname) AS cst_firstname,--removed umwanted spaces
 			TRIM(cst_lastname) AS cst_lastname,
 			CASE 
-				WHEN UPPER(TRIM(cst_marital_status)) = 'S' THEN 'Single'
+				WHEN UPPER(TRIM(cst_marital_status)) = 'S' THEN 'Single'--data normalization
 				WHEN UPPER(TRIM(cst_marital_status)) = 'M' THEN 'Married'
-				ELSE 'n/a'
+				ELSE 'n/a'--handling null values
 			END AS cst_marital_status, -- Normalize marital status values to readable format
 			CASE 
 				WHEN UPPER(TRIM(cst_gndr)) = 'F' THEN 'Female'
@@ -64,7 +64,7 @@ BEGIN
 			FROM bronze.crm_cust_info
 			WHERE cst_id IS NOT NULL
 		) t
-		WHERE flag_last = 1; -- Select the most recent record per customer
+		WHERE flag_last = 1; -- Select the most recent record per customer, removing duplicates
 		SET @end_time = GETDATE();
         PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
         PRINT '>> -------------';
@@ -89,9 +89,9 @@ BEGIN
 			REPLACE(SUBSTRING(prd_key, 1, 5), '-', '_') AS cat_id, -- Extract category ID
 			SUBSTRING(prd_key, 7, LEN(prd_key)) AS prd_key,        -- Extract product key
 			prd_nm,
-			ISNULL(prd_cost, 0) AS prd_cost,
+			ISNULL(prd_cost, 0) AS prd_cost,--handling null values
 			CASE 
-				WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain'
+				WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain'-- data normalization and standardization
 				WHEN UPPER(TRIM(prd_line)) = 'R' THEN 'Road'
 				WHEN UPPER(TRIM(prd_line)) = 'S' THEN 'Other Sales'
 				WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
@@ -101,7 +101,7 @@ BEGIN
 			CAST(
 				LEAD(prd_start_dt) OVER (PARTITION BY prd_key ORDER BY prd_start_dt) - 1 
 				AS DATE
-			) AS prd_end_dt -- Calculate end date as one day before the next start date
+			) AS prd_end_dt -- Calculate end date as one day before the next start date(end_date can't be less than start date)
 		FROM bronze.crm_prd_info;
         SET @end_time = GETDATE();
         PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
@@ -128,7 +128,7 @@ BEGIN
 			sls_prd_key,
 			sls_cust_id,
 			CASE 
-				WHEN sls_order_dt = 0 OR LEN(sls_order_dt) != 8 THEN NULL
+				WHEN sls_order_dt = 0 OR LEN(sls_order_dt) != 8 THEN NULL-- checking for invalid dates
 				ELSE CAST(CAST(sls_order_dt AS VARCHAR) AS DATE)
 			END AS sls_order_dt,
 			CASE 
