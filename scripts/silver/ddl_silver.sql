@@ -6,6 +6,12 @@ Script Purpose:
     This script creates tables in the 'silver' schema, dropping existing tables 
     if they already exist.
 	  Run this script to re-define the DDL structure of 'bronze' Tables
+Metacolumns were added like create_date and update_date to know about record's
+load timestamp and record's last update timestamp.
+Use DATETIME only for old systems.
+Use DATETIME2 for new projects → more accurate, smaller storage, better range.
+default: when no value would be given the column would be automatically 
+filled with the current date and time
 ===============================================================================
 */
 
